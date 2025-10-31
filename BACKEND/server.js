@@ -2,22 +2,28 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+require("dotenv").config(); // Load environment variables
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3030
+const PORT = process.env.PORT || 3030;
+
 // --- MongoDB Connection ---
-mongoose.connect("mongodb://127.0.0.1:27017/codingtracker_msd")
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Connection Error:", err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // --- User Schema ---
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
+  password: { type: String, required: true },
 });
 const User = mongoose.model("User", userSchema);
 
@@ -30,7 +36,7 @@ function createPlatformModel(platform) {
     mediumSolved: { type: Number, default: 0 },
     hardSolved: { type: Number, default: 0 },
     totalSolved: { type: Number, default: 0 },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
   });
   return mongoose.model(platform, schema);
 }
@@ -58,13 +64,13 @@ app.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
     const exists = await User.findOne({ $or: [{ username }, { email }] });
-    if (exists) return res.status(400).json({ message: "User exists" });
+    if (exists) return res.status(400).json({ message: "User already exists" });
 
     const user = await User.create({ username, email, password });
-    res.status(201).json({ message: "Registered", user });
+    res.status(201).json({ message: "Registered successfully", user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Register failed" });
+    res.status(500).json({ message: "Registration failed" });
   }
 });
 
@@ -73,7 +79,8 @@ app.post("/login", async (req, res) => {
   try {
     const { identifier, password } = req.body;
     const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
-    if (!user || user.password !== password) return res.status(401).json({ message: "Invalid credentials" });
+    if (!user || user.password !== password)
+      return res.status(401).json({ message: "Invalid credentials" });
 
     const token = jwt.sign({ id: user._id, username: user.username }, "sectionA", { expiresIn: "1h" });
     res.json({ token, username: user.username });
@@ -89,7 +96,14 @@ function platformRoutes(path, Model) {
   app.get(path, verifyToken, async (req, res) => {
     try {
       const stats = await Model.findOne({ userId: req.user.id });
-      if (!stats) return res.json({ username: req.user.username, easySolved: 0, mediumSolved: 0, hardSolved: 0, totalSolved: 0 });
+      if (!stats)
+        return res.json({
+          username: req.user.username,
+          easySolved: 0,
+          mediumSolved: 0,
+          hardSolved: 0,
+          totalSolved: 0,
+        });
       res.json(stats);
     } catch (err) {
       console.error(err);
@@ -123,4 +137,4 @@ platformRoutes("/hackerrank", Hackerrank);
 platformRoutes("/codechef", Codechef);
 
 // --- Start Server ---
-app.listen(3030, () => console.log("🚀 Server running on port 3030"));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
