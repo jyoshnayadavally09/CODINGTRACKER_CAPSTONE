@@ -1,0 +1,264 @@
+/* 🌱 Container */
+.codeforces-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 30px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #0b1f17, #10291d);
+  box-shadow: 0 6px 35px rgba(0, 0, 0, 0.5);
+  position: relative;
+  color: #e0f2f1;
+  font-family: "Poppins", sans-serif;
+}
+
+/* 🌿 Header */
+.codeforces-header h1 {
+  color: #a5d6a7;
+  font-size: 2.2rem;
+  text-align: center;
+  margin-bottom: 35px;
+  text-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+}
+
+/* 🌿 Top Bar */
+.codeforces-top-bar {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  display: flex;
+  gap: 15px;
+}
+
+.back-button,
+.logout-button {
+  border: 2px solid #43a047;
+  background: none;
+  color: #43a047;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.back-button:hover,
+.logout-button:hover {
+  background: #43a047;
+  color: #fff;
+}
+
+/* 🌿 Username Section */
+.username-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.username-section input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 2px solid #43a047;
+  background: #0e2b1b;
+  color: #ffffff;
+  font-size: 1rem;
+  width: 250px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.username-section input:focus {
+  box-shadow: 0 0 10px #43a047;
+}
+
+.codeforces-button {
+  background: #66bb6a;
+  border: none;
+  color: #0b1f17;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.codeforces-button:hover {
+  background: #43a047;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+/* 🌿 Difficulty Labels */
+.difficulty-labels {
+  display: flex;
+  justify-content: center;
+  gap: 80px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.label {
+  font-size: 1.2em;
+}
+
+.label.easy {
+  color: #4caf50;
+}
+
+.label.medium {
+  color: #ffc107;
+}
+
+.label.hard {
+  color: #f44336;
+}
+
+/* 🌿 Circle Progress */
+.circle-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  position: relative;
+}
+
+.progress-circle {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.progress-circle::before {
+  content: "";
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  background: #0d1f15;
+  border-radius: 50%;
+  box-shadow: 0 0 25px rgba(76, 175, 80, 0.3);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.progress-bg {
+  fill: none;
+  stroke: #1b3d2a;
+  stroke-width: 12;
+}
+
+.progress-segment {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transition: stroke-dasharray 1s ease;
+}
+
+.progress-segment.easy {
+  stroke: #4caf50;
+}
+
+.progress-segment.medium {
+  stroke: #ffc107;
+}
+
+.progress-segment.hard {
+  stroke: #f44336;
+}
+
+/* 🌿 Center Text */
+.progress-center {
+  position: absolute;
+  text-align: center;
+}
+
+.progress-center h2 {
+  margin: 0;
+  font-size: 3.8em;
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(76, 175, 80, 0.5);
+}
+
+.progress-center p {
+  margin: 6px 0 0;
+  font-size: 1.2em;
+  color: #a5d6a7;
+  font-weight: 600;
+}
+
+/* 🌿 Stats Input Section */
+.codeforces-stats {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.enter-title {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: #ff8800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(102, 187, 106, 0.5);
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #10291d;
+  border: 2px solid #43a047;
+  border-radius: 10px;
+  padding: 12px 18px;
+  width: 320px;
+  transition: 0.3s;
+}
+
+.stat-card:hover {
+  background: #133322;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.stat-card label {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.stat-card.easy label {
+  color: #4caf50;
+}
+
+.stat-card.medium label {
+  color: #ffc107;
+}
+
+.stat-card.hard label {
+  color: #f44336;
+}
+
+.stat-card input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 2px solid #43a047;
+  background: #0e2b1b;
+  color: #ffffff;
+  font-size: 1rem;
+  width: 100px;
+  text-align: center;
+  outline: none;
+  transition: 0.3s;
+}
+
+.stat-card input:focus {
+  box-shadow: 0 0 10px #43a047;
+  border-color: #66bb6a;
+}

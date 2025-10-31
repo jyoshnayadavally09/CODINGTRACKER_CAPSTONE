@@ -1,207 +1,203 @@
-// CodeChef.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./Codeforces.css"; // ✅ Reuse Codeforces CSS
 
 export default function CodeChef() {
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
   const [username, setUsername] = useState("");
-  const [easy, setEasy] = useState(0);
-  const [medium, setMedium] = useState(0);
-  const [hard, setHard] = useState(0);
-  const [submitted, setSubmitted] = useState(false);
+  const [stats, setStats] = useState({
+    easySolved: 0,
+    mediumSolved: 0,
+    hardSolved: 0,
+    totalSolved: 0,
+  });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  // ✅ Fetch data
+  useEffect(() => {
+    if (!token) return navigate("/login");
+
+    const fetchStats = async () => {
+      try {
+        const res = await axios.get("http://localhost:3030/codechef", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data;
+        setUsername(data.username || "");
+        setStats({
+          easySolved: data.easySolved || 0,
+          mediumSolved: data.mediumSolved || 0,
+          hardSolved: data.hardSolved || 0,
+          totalSolved:
+            (data.easySolved || 0) +
+            (data.mediumSolved || 0) +
+            (data.hardSolved || 0),
+        });
+      } catch (err) {
+        console.log("Error fetching CodeChef stats", err.message);
+      }
+    };
+
+    fetchStats();
+  }, [navigate, token]);
+
+  // ✅ Save data
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!username.trim()) return alert("Please enter username");
+    setLoading(true);
+    try {
+      await axios.post(
+        "http://localhost:3030/codechef",
+        {
+          username,
+          easySolved: stats.easySolved,
+          mediumSolved: stats.mediumSolved,
+          hardSolved: stats.hardSolved,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("✅ Stats saved successfully!");
+    } catch (err) {
+      console.error(err.response?.data || err.message);
+      alert("❌ Failed to save stats.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const calculateOffset = (value, total = 100) => {
-    const radius = 50;
-    const circumference = 2 * Math.PI * radius;
-    const percent = Math.min(value / total, 1);
-    return circumference - percent * circumference;
+  const handleStatChange = (field, value) => {
+    const updated = { ...stats, [field]: Number(value) || 0 };
+    updated.totalSolved =
+      updated.easySolved + updated.mediumSolved + updated.hardSolved;
+    setStats(updated);
   };
+
+  const total = stats.totalSolved || 1;
+  const radius = 100;
+  const circumference = 2 * Math.PI * radius;
+  const easyArc = (stats.easySolved / total) * circumference;
+  const mediumArc = (stats.mediumSolved / total) * circumference;
+  const hardArc = (stats.hardSolved / total) * circumference;
 
   return (
-    <div className="leetcode-container purple-theme" style={{ position: "relative" }}>
-      {/* Top Back Button */}
-      <div className="leetcode-top-bar">
-        <button className="back-button" onClick={() => navigate("/")}>
-          Back
+    <div className="codeforces-container green-theme">
+      <div className="codeforces-header">
+        <h1>CodeChef Progress</h1>
+        <div className="codeforces-top-bar">
+          <button className="back-button" onClick={() => navigate("/")}>
+            ← Back
+          </button>
+          <button
+            className="logout-button"
+            onClick={() => {
+              localStorage.removeItem("token");
+              navigate("/login");
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Username Section */}
+      <div className="username-section">
+        <input
+          type="text"
+          value={username}
+          placeholder="Enter CodeChef Username"
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <button className="codeforces-button" onClick={handleSubmit}>
+          {loading ? "Saving..." : "Save Stats"}
         </button>
       </div>
 
-      <div className="leetcode-header">
-        <h1>CodeChef Tracker</h1>
+      {/* Difficulty Labels */}
+      <div className="difficulty-labels">
+        <div className="label easy">Easy</div>
+        <div className="label medium">Medium</div>
+        <div className="label hard">Hard</div>
       </div>
 
-      {!submitted ? (
-        <form className="leetcode-stats-section" onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "15px" }}>
-            <label>Username:</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              placeholder="Enter your CodeChef username"
+      {/* Progress Circle */}
+      <div className="circle-wrapper">
+        <div className="progress-circle">
+          <svg viewBox="0 0 240 240" className="progress-ring">
+            <circle className="progress-bg" cx="120" cy="120" r="100" />
+            <circle
+              className="progress-segment easy"
+              cx="120"
+              cy="120"
+              r="100"
               style={{
-                marginLeft: "10px",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                border: "1px solid #BB86FC",
-                background: "#2D2A3F",
-                color: "#E0E0E0"
+                strokeDasharray: `${easyArc} ${circumference - easyArc}`,
+                strokeDashoffset: 0,
               }}
             />
-          </div>
-
-          <div style={{ marginBottom: "10px" }}>
-            <label>Easy Problems Solved:</label>
-            <input
-              type="number"
-              min="0"
-              value={easy}
-              onChange={(e) => setEasy(parseInt(e.target.value))}
-              required
+            <circle
+              className="progress-segment medium"
+              cx="120"
+              cy="120"
+              r="100"
               style={{
-                marginLeft: "10px",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                border: "1px solid #BB86FC",
-                background: "#2D2A3F",
-                color: "#E0E0E0",
-                width: "80px"
+                strokeDasharray: `${mediumArc} ${circumference - mediumArc}`,
+                strokeDashoffset: -easyArc,
               }}
             />
-          </div>
-
-          <div style={{ marginBottom: "10px" }}>
-            <label>Medium Problems Solved:</label>
-            <input
-              type="number"
-              min="0"
-              value={medium}
-              onChange={(e) => setMedium(parseInt(e.target.value))}
-              required
+            <circle
+              className="progress-segment hard"
+              cx="120"
+              cy="120"
+              r="100"
               style={{
-                marginLeft: "10px",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                border: "1px solid #BB86FC",
-                background: "#2D2A3F",
-                color: "#E0E0E0",
-                width: "80px"
+                strokeDasharray: `${hardArc} ${circumference - hardArc}`,
+                strokeDashoffset: -(easyArc + mediumArc),
               }}
             />
+          </svg>
+
+          <div className="progress-center">
+            <h2>{stats.totalSolved}</h2>
+            <p>Total Solved</p>
           </div>
-
-          <div style={{ marginBottom: "15px" }}>
-            <label>Hard Problems Solved:</label>
-            <input
-              type="number"
-              min="0"
-              value={hard}
-              onChange={(e) => setHard(parseInt(e.target.value))}
-              required
-              style={{
-                marginLeft: "10px",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                border: "1px solid #BB86FC",
-                background: "#2D2A3F",
-                color: "#E0E0E0",
-                width: "80px"
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="leetcode-button"
-            style={{ display: "block", marginTop: "10px" }}
-          >
-            Submit
-          </button>
-        </form>
-      ) : (
-        <div className="leetcode-stats-section">
-          <h2>User: {username}</h2>
-
-          <div className="progress-circles-container">
-            {/* Easy Circle */}
-            <div className="progress-circle-item">
-              <svg width="120" height="120">
-                <circle cx="60" cy="60" r="50" className="progress-circle-bg" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  className="progress-circle-progress easy-progress"
-                  strokeDasharray={2 * Math.PI * 50}
-                  strokeDashoffset={calculateOffset(easy, 100)}
-                />
-                <text x="60" y="60" textAnchor="middle" dominantBaseline="middle">
-                  {easy}
-                </text>
-                <text x="60" y="85" textAnchor="middle" dominantBaseline="middle">
-                  Easy
-                </text>
-              </svg>
-            </div>
-
-            {/* Medium Circle */}
-            <div className="progress-circle-item">
-              <svg width="120" height="120">
-                <circle cx="60" cy="60" r="50" className="progress-circle-bg" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  className="progress-circle-progress medium-progress"
-                  strokeDasharray={2 * Math.PI * 50}
-                  strokeDashoffset={calculateOffset(medium, 100)}
-                />
-                <text x="60" y="60" textAnchor="middle" dominantBaseline="middle">
-                  {medium}
-                </text>
-                <text x="60" y="85" textAnchor="middle" dominantBaseline="middle">
-                  Medium
-                </text>
-              </svg>
-            </div>
-
-            {/* Hard Circle */}
-            <div className="progress-circle-item">
-              <svg width="120" height="120">
-                <circle cx="60" cy="60" r="50" className="progress-circle-bg" />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  className="progress-circle-progress hard-progress"
-                  strokeDasharray={2 * Math.PI * 50}
-                  strokeDashoffset={calculateOffset(hard, 100)}
-                />
-                <text x="60" y="60" textAnchor="middle" dominantBaseline="middle">
-                  {hard}
-                </text>
-                <text x="60" y="85" textAnchor="middle" dominantBaseline="middle">
-                  Hard
-                </text>
-              </svg>
-            </div>
-          </div>
-
-          <button
-            className="leetcode-button"
-            onClick={() => setSubmitted(false)}
-            style={{ marginTop: "15px" }}
-          >
-            Edit
-          </button>
         </div>
-      )}
+      </div>
+
+      {/* Stat Input Section */}
+      <div className="codeforces-stats">
+        <p className="enter-title">Enter</p>
+
+        <div className="stat-card easy">
+          <label>Easy</label>
+          <input
+            type="number"
+            value={stats.easySolved}
+            onChange={(e) => handleStatChange("easySolved", e.target.value)}
+          />
+        </div>
+
+        <div className="stat-card medium">
+          <label>Medium</label>
+          <input
+            type="number"
+            value={stats.mediumSolved}
+            onChange={(e) => handleStatChange("mediumSolved", e.target.value)}
+          />
+        </div>
+
+        <div className="stat-card hard">
+          <label>Hard</label>
+          <input
+            type="number"
+            value={stats.hardSolved}
+            onChange={(e) => handleStatChange("hardSolved", e.target.value)}
+          />
+        </div>
+      </div>
     </div>
   );
 }
