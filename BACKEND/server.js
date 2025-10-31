@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PORT = process.env.PORT || 3030
 // --- MongoDB Connection ---
 mongoose.connect("mongodb://127.0.0.1:27017/codingtracker_msd")
   .then(() => console.log("✅ MongoDB Connected"))
