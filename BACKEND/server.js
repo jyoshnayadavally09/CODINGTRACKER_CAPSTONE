@@ -1,19 +1,20 @@
+// ===== server.js =====
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+require("dotenv").config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB Atlas Connection
+// ✅ MongoDB Connect
 mongoose
-  .connect(
-    "mongodb+srv://yadavallyjyoshna200609_db_user:QPHYIgwRurWGjMOh@cluster0.1cb9jbq.mongodb.net/codingtracker_msd?retryWrites=true&w=majority&appName=Cluster0"
-  )
-  .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch((err) => console.error("❌ MongoDB Atlas Connection Error:", err));
+  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/codingtracker_msd")
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // ✅ User Schema
 const userSchema = new mongoose.Schema({
@@ -51,7 +52,7 @@ function verifyToken(req, res, next) {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) return res.status(403).json({ message: "No token provided" });
-    req.user = jwt.verify(token, "sectionA");
+    req.user = jwt.verify(token, process.env.JWT_SECRET || "sectionA");
     next();
   } catch {
     res.status(401).json({ message: "Invalid token" });
@@ -65,7 +66,8 @@ app.post("/register", async (req, res) => {
     const exists = await User.findOne({ $or: [{ username }, { email }] });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const user = await User.create({ username, email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, email, password: hashedPassword });
     res.status(201).json({ message: "Registered successfully", user });
   } catch (err) {
     console.error(err);
@@ -78,10 +80,14 @@ app.post("/login", async (req, res) => {
   try {
     const { identifier, password } = req.body;
     const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
-    if (!user || user.password !== password)
-      return res.status(401).json({ message: "Invalid credentials" });
+    if (!user) return res.status(401).json({ message: "User not found" });
 
-    const token = jwt.sign({ id: user._id, username: user.username }, "sectionA", { expiresIn: "2h" });
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || "sectionA", {
+      expiresIn: "2h",
+    });
     res.json({ token, username: user.username });
   } catch (err) {
     console.error(err);
@@ -89,21 +95,21 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// ✅ Platform Routes Function
+// ✅ Generic Platform Routes
 function platformRoutes(path, Model, name) {
   // GET
   app.get(path, verifyToken, async (req, res) => {
     try {
       const stats = await Model.findOne({ userId: req.user.id });
-      if (!stats)
-        return res.json({
+      res.json(
+        stats || {
           username: req.user.username,
           easySolved: 0,
           mediumSolved: 0,
           hardSolved: 0,
           totalSolved: 0,
-        });
-      res.json(stats);
+        }
+      );
     } catch (err) {
       console.error(err);
       res.status(500).json({ message: "Fetch error" });
@@ -140,7 +146,7 @@ function platformRoutes(path, Model, name) {
   });
 }
 
-// Apply platform routes
+// ✅ Apply platform routes
 platformRoutes("/leetcode", Leetcode, "Leetcode");
 platformRoutes("/codeforces", Codeforces, "Codeforces");
 platformRoutes("/hackerrank", Hackerrank, "Hackerrank");
@@ -159,20 +165,16 @@ app.get("/custom-platforms", verifyToken, async (req, res) => {
 
 app.post("/custom-platforms", verifyToken, async (req, res) => {
   try {
-    const { platform, username, easySolved = 0, mediumSolved = 0, hardSolved = 0, imageUrl = "" } = req.body;
+    const { platform, username, imageUrl = "" } = req.body;
 
     if (!platform || !username)
       return res.status(400).json({ message: "Platform and username required" });
 
-    const totalSolved = Number(easySolved) + Number(mediumSolved) + Number(hardSolved);
+    const totalSolved = 0;
     const existing = await CustomPlatform.findOne({ userId: req.user.id, platform });
 
     if (existing) {
       existing.username = username;
-      existing.easySolved = easySolved;
-      existing.mediumSolved = mediumSolved;
-      existing.hardSolved = hardSolved;
-      existing.totalSolved = totalSolved;
       existing.imageUrl = imageUrl;
       existing.updatedAt = new Date();
       await existing.save();
@@ -183,9 +185,6 @@ app.post("/custom-platforms", verifyToken, async (req, res) => {
       userId: req.user.id,
       platform,
       username,
-      easySolved,
-      mediumSolved,
-      hardSolved,
       totalSolved,
       imageUrl,
     });
@@ -208,60 +207,6 @@ app.delete("/custom-platforms/:id", verifyToken, async (req, res) => {
   }
 });
 
-// ✅ Dynamic Custom Routes
-app.get("/:platform", verifyToken, async (req, res) => {
-  try {
-    const { platform } = req.params;
-    let Model = mongoose.models[platform] || createPlatformModel(platform);
-    const stats = await Model.findOne({ userId: req.user.id });
-
-    if (!stats) {
-      return res.json({
-        username: req.user.username,
-        easySolved: 0,
-        mediumSolved: 0,
-        hardSolved: 0,
-        totalSolved: 0,
-      });
-    }
-
-    res.json(stats);
-  } catch (err) {
-    console.error("❌ Fetch failed:", err);
-    res.status(500).json({ message: "Fetch failed", error: err.message });
-  }
-});
-
-app.post("/:platform", verifyToken, async (req, res) => {
-  try {
-    const { platform } = req.params;
-    const { username, easySolved = 0, mediumSolved = 0, hardSolved = 0, imageUrl = "" } = req.body;
-    const totalSolved = Number(easySolved) + Number(mediumSolved) + Number(hardSolved);
-
-    let Model = mongoose.models[platform] || createPlatformModel(platform);
-
-    const stats = await Model.findOneAndUpdate(
-      { userId: req.user.id },
-      {
-        userId: req.user.id,
-        platform,
-        username,
-        easySolved,
-        mediumSolved,
-        hardSolved,
-        totalSolved,
-        imageUrl,
-        updatedAt: new Date(),
-      },
-      { upsert: true, new: true }
-    );
-
-    res.json({ message: "✅ Saved successfully", data: stats });
-  } catch (err) {
-    console.error("❌ Save failed:", err);
-    res.status(500).json({ message: "Save failed", error: err.message });
-  }
-});
-
-// ✅ Start Server
-app.listen(3030, () => console.log("🚀 Server running on port 3030"));
+// ✅ Server Start
+const PORT = process.env.PORT || 3030;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
