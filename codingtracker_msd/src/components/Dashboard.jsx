@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import "../index.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBell, faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
+import api from "./api";
 
 const basePlatforms = ["leetcode", "codeforces", "codechef", "hackerrank"];
 
@@ -52,15 +53,15 @@ export default function Dashboard() {
     }
   }, [token, navigate]);
 
-  // ✅ Fetch all platform stats
+  // ✅ Fetch all platform stats (using axios)
   const fetchPlatformStats = async () => {
     try {
       const stats = {};
       for (const p of basePlatforms) {
-        const res = await fetch(`http://localhost:3030/${p}`, {
+        const res = await api.get(`/${p}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
+        const data = res.data;
         stats[p] = {
           username: data.username || "Not set",
           totalSolved: data.totalSolved || 0,
@@ -75,11 +76,10 @@ export default function Dashboard() {
   // ✅ Fetch custom platforms
   const fetchCustomPlatforms = async () => {
     try {
-      const res = await fetch("http://localhost:3030/custom-platforms", {
+      const res = await api.get("/custom-platforms", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      setCustomPlatforms(data);
+      setCustomPlatforms(res.data);
     } catch (err) {
       console.error("❌ Failed to fetch custom platforms:", err);
     }
@@ -94,13 +94,10 @@ export default function Dashboard() {
   const handleDeletePlatform = async (id) => {
     if (!window.confirm("Are you sure to delete this platform?")) return;
     try {
-      const res = await fetch(`http://localhost:3030/custom-platforms/${id}`, {
-        method: "DELETE",
+      await api.delete(`/custom-platforms/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        setCustomPlatforms((prev) => prev.filter((p) => p._id !== id));
-      }
+      setCustomPlatforms((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
       console.error("❌ Delete failed:", err);
     }
@@ -146,7 +143,6 @@ export default function Dashboard() {
             />
             <div className="user-info">
               <span className="username">{user.username?.toUpperCase()}</span>
-              
             </div>
           </div>
           <button className="logout-btn small" onClick={handleLogout}>Logout</button>
