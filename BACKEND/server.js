@@ -152,7 +152,7 @@ platformRoutes("/codeforces", Codeforces, "Codeforces");
 platformRoutes("/hackerrank", Hackerrank, "Hackerrank");
 platformRoutes("/codechef", Codechef, "Codechef");
 
-// ✅ Custom Platforms
+// ✅ Custom Platforms (now with solved counts)
 app.get("/custom-platforms", verifyToken, async (req, res) => {
   try {
     const list = await CustomPlatform.find({ userId: req.user.id });
@@ -165,17 +165,33 @@ app.get("/custom-platforms", verifyToken, async (req, res) => {
 
 app.post("/custom-platforms", verifyToken, async (req, res) => {
   try {
-    const { platform, username, imageUrl = "" } = req.body;
+    const {
+      platform,
+      username,
+      imageUrl = "",
+      easySolved = 0,
+      mediumSolved = 0,
+      hardSolved = 0,
+    } = req.body;
 
     if (!platform || !username)
       return res.status(400).json({ message: "Platform and username required" });
 
-    const totalSolved = 0;
-    const existing = await CustomPlatform.findOne({ userId: req.user.id, platform });
+    const totalSolved =
+      Number(easySolved) + Number(mediumSolved) + Number(hardSolved);
+
+    const existing = await CustomPlatform.findOne({
+      userId: req.user.id,
+      platform,
+    });
 
     if (existing) {
       existing.username = username;
       existing.imageUrl = imageUrl;
+      existing.easySolved = easySolved;
+      existing.mediumSolved = mediumSolved;
+      existing.hardSolved = hardSolved;
+      existing.totalSolved = totalSolved;
       existing.updatedAt = new Date();
       await existing.save();
       return res.json({ message: "Updated successfully", data: existing });
@@ -185,6 +201,9 @@ app.post("/custom-platforms", verifyToken, async (req, res) => {
       userId: req.user.id,
       platform,
       username,
+      easySolved,
+      mediumSolved,
+      hardSolved,
       totalSolved,
       imageUrl,
     });
