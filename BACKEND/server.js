@@ -12,7 +12,14 @@ app.use(express.json());
 
 // ✅ MongoDB Connect
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/codingtracker_msd")
+  .connect(process.env.MONGO_URI ||  process.env.MONGO_URI ||
+      "mongodb+srv://yadavallyjyoshna200609_db_user:QPHYIgwRurWGjMOh@cluster0.1cb9jbq.mongodb.net/codingtracker_msd?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
+
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 

@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import "./Auth.css";
 
+import api from "./api";
 function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", username: "", password: "" });
@@ -43,7 +44,7 @@ function Register() {
     }
 
     try {
-      const res = await axios.post("http://localhost:3030/register", form);
+      const res = await api.post("/register", form);
       setMessage(res.data.message || "Registered successfully!");
       setTimeout(() => navigate("/login"), 1200);
     } catch (err) {

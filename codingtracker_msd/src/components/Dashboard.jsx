@@ -33,8 +33,6 @@ export default function Dashboard() {
   const [dailyStatus, setDailyStatus] = useState({});
   const token = localStorage.getItem("token");
 
-  const API = "https://codingtracker-capstone-7.onrender.com";
-
   const toggleSideNav = () => setSideOpen((p) => !p);
   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
@@ -59,7 +57,7 @@ export default function Dashboard() {
     try {
       const stats = {};
       for (const p of basePlatforms) {
-        const res = await fetch(`${API}/${p}`, {
+        const res = await fetch(`http://localhost:3030/${p}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -77,7 +75,7 @@ export default function Dashboard() {
   // ✅ Fetch custom platforms
   const fetchCustomPlatforms = async () => {
     try {
-      const res = await fetch(`${API}/custom-platforms`, {
+      const res = await fetch("http://localhost:3030/custom-platforms", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -96,7 +94,7 @@ export default function Dashboard() {
   const handleDeletePlatform = async (id) => {
     if (!window.confirm("Are you sure to delete this platform?")) return;
     try {
-      const res = await fetch(`${API}/custom-platforms/${id}`, {
+      const res = await fetch(`http://localhost:3030/custom-platforms/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -148,6 +146,7 @@ export default function Dashboard() {
             />
             <div className="user-info">
               <span className="username">{user.username?.toUpperCase()}</span>
+              
             </div>
           </div>
           <button className="logout-btn small" onClick={handleLogout}>Logout</button>
