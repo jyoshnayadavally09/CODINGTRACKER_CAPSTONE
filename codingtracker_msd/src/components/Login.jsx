@@ -1,72 +1,75 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import "./Auth.css";
 import api from "./api";
+import "./Auth.css";
 
-function Login({ setToken }) {
-  const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState(""); // email or username
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+function Login() {
+const navigate = useNavigate();
+const [identifier, setIdentifier] = useState(""); // username or email
+const [password, setPassword] = useState("");
+const [message, setMessage] = useState("");
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    if (!identifier || !password) {
-      setMessage("Enter email/username and password");
-      return;
-    }
+const handleLogin = async (e) => {
+e.preventDefault();
 
-    try {
-      const res = await api.post("/login", {
-        identifier,
-        password
-      });
 
-      localStorage.setItem("token", res.data.token);
-      if (setToken) setToken(res.data.token);
+if (!identifier || !password) {
+  setMessage("Please enter both username/email and password");
+  return;
+}
 
-      navigate("/dashboard");
-      setMessage(`Welcome ${res.data.user?.username || identifier}!`);
-    } catch (err) {
-      if (err.response?.status === 401) setMessage("Invalid password");
-      else if (err.response?.status === 404) setMessage("User not found");
-      else setMessage("Login failed. Please check your credentials.");
-    }
-  };
+try {
+  console.log("📤 Sending login request...");
+  const res = await api.post("/login", { identifier, password });
 
-  return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <img src="logo.png" alt="Coding Tracker" className="logo" />
-        <h2>Login</h2>
+  // Save token to localStorage for authentication
+  localStorage.setItem("token", res.data.token);
+  localStorage.setItem("username", res.data.username);
 
-        <form onSubmit={handleLogin}>
-          <input
-            type="text"
-            placeholder="Email or Username"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit">Login</button>
-        </form>
+  setMessage("✅ Login successful!");
+  console.log("✅ Login response:", res.data);
 
-        {message && <p className="msg">{message}</p>}
+  // Redirect to dashboard or home
+  setTimeout(() => navigate("/dashboard"), 1000);
+} catch (err) {
+  console.error("❌ Login error:", err);
+  setMessage(err.response?.data?.message || "Login failed. Check your credentials.");
+}
 
-        <p className="switch-text">
-          Don’t have an account? <Link to="/register">Sign Up</Link>
-        </p>
-      </div>
-    </div>
-  );
+
+};
+
+return ( <div className="auth-container"> <div className="auth-box"> <img src="logo.png" alt="Coding Tracker" className="logo" /> <h2>Welcome Back</h2>
+
+
+    <form onSubmit={handleLogin}>
+      <input
+        type="text"
+        placeholder="Email or Username"
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
+        required
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+      />
+      <button type="submit">Login</button>
+    </form>
+
+    {message && <p className="msg">{message}</p>}
+
+    <p className="switch-text">
+      Don’t have an account? <Link to="/register">Sign Up</Link>
+    </p>
+  </div>
+</div>
+
+
+);
 }
 
 export default Login;

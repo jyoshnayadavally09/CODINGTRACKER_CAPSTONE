@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "./api"; // ✅ use shared axios instance
 import "./LeetCode.css";
 
 export default function LeetCode() {
@@ -15,25 +16,29 @@ export default function LeetCode() {
   });
   const [loading, setLoading] = useState(false);
 
+  // ✅ Fetch saved stats from backend
   const fetchBackendStats = async () => {
     try {
-      const res = await fetch("http://localhost:3030/leetcode", {
+      const res = await api.get("/leetcode", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const data = res.data;
       setUsername(data.username || "");
       setStats({
-        easySolved: data.easySolved,
-        mediumSolved: data.mediumSolved,
-        hardSolved: data.hardSolved,
+        easySolved: data.easySolved || 0,
+        mediumSolved: data.mediumSolved || 0,
+        hardSolved: data.hardSolved || 0,
         totalSolved:
-          data.easySolved + data.mediumSolved + data.hardSolved || 0,
+          (data.easySolved || 0) +
+          (data.mediumSolved || 0) +
+          (data.hardSolved || 0),
       });
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error fetching backend stats:", err.message);
     }
   };
 
+  // ✅ Fetch stats from public LeetCode API and save to backend
   const fetchLeetCodeData = async (uname) => {
     if (!uname) return alert("Enter username");
     setLoading(true);
@@ -42,6 +47,7 @@ export default function LeetCode() {
         `https://leetcode-api-faisalshohag.vercel.app/${uname}`
       );
       const data = await res.json();
+
       const easySolved = Number(data.easySolved || 0);
       const mediumSolved = Number(data.mediumSolved || 0);
       const hardSolved = Number(data.hardSolved || 0);
@@ -49,25 +55,19 @@ export default function LeetCode() {
 
       setStats({ easySolved, mediumSolved, hardSolved, totalSolved });
 
-      await fetch("http://localhost:3030/leetcode", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          username: uname,
-          easySolved,
-          mediumSolved,
-          hardSolved,
-        }),
-      });
+      // ✅ Save to backend
+      await api.post(
+        "/leetcode",
+        { username: uname, easySolved, mediumSolved, hardSolved },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       localStorage.setItem("leetUsername", uname);
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error fetching LeetCode data:", err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSetUsername = () => {
@@ -85,12 +85,12 @@ export default function LeetCode() {
   };
 
   useEffect(() => {
-    if (!token) navigate("/login");
+    if (!token) return navigate("/login");
     fetchBackendStats();
   }, [navigate]);
 
-  const total =
-    stats.easySolved + stats.mediumSolved + stats.hardSolved || 1;
+  // ✅ Circle stats
+  const total = stats.totalSolved || 1;
   const easyPercent = (stats.easySolved / total) * 100;
   const mediumPercent = (stats.mediumSolved / total) * 100;
   const hardPercent = (stats.hardSolved / total) * 100;
@@ -122,12 +122,7 @@ export default function LeetCode() {
         <div className="circle-wrapper">
           <div className="progress-circle">
             <svg width="200" height="200" viewBox="0 0 120 120">
-              <circle
-                className="progress-bg"
-                cx="60"
-                cy="60"
-                r="54"
-              />
+              <circle className="progress-bg" cx="60" cy="60" r="54" />
               <circle
                 className="progress-segment easy"
                 cx="60"

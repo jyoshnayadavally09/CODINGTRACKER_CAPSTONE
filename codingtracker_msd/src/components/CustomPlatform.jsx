@@ -15,12 +15,16 @@ export default function CustomPlatform() {
     totalSolved: 0,
   });
 
-  // 🔹 Fetch the platform data
+  // 🔹 Fetch platform data
   const fetchPlatformData = async () => {
     try {
-      const res = await fetch("http://localhost:3030/custom-platforms", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        "https://codingtracker-capstone-8.onrender.com/custom-platforms",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       if (!res.ok) throw new Error("Failed to fetch platforms");
       const data = await res.json();
 
@@ -50,7 +54,7 @@ export default function CustomPlatform() {
     fetchPlatformData();
   }, [platform]);
 
-  // 🔹 Handle input change
+  // 🔹 Handle input changes
   const handleChange = (field, value) => {
     const updated = { ...formData, [field]: Number(value) || 0 };
     updated.totalSolved =
@@ -58,27 +62,30 @@ export default function CustomPlatform() {
     setFormData(updated);
   };
 
-  // 🔹 Save or update platform data
+  // 🔹 Save or update data
   const handleSubmit = async () => {
     if (!formData.username.trim()) return alert("Enter username");
 
     try {
-      const res = await fetch("http://localhost:3030/custom-platforms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          platform: platform, // ✅ Important to send platform name
-          username: formData.username,
-          easySolved: formData.easySolved,
-          mediumSolved: formData.mediumSolved,
-          hardSolved: formData.hardSolved,
-          totalSolved: formData.totalSolved,
-          imageUrl: "",
-        }),
-      });
+      const res = await fetch(
+        "https://codingtracker-capstone-8.onrender.com/custom-platforms",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            platform,
+            username: formData.username,
+            easySolved: formData.easySolved,
+            mediumSolved: formData.mediumSolved,
+            hardSolved: formData.hardSolved,
+            totalSolved: formData.totalSolved,
+            imageUrl: "",
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save platform data");
 

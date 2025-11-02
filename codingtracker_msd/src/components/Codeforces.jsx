@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "./api"; // ✅ correct import
 import "./Codeforces.css";
 
 export default function Codeforces() {
@@ -15,11 +16,15 @@ export default function Codeforces() {
   });
   const [loading, setLoading] = useState(false);
 
+  // ✅ Fetch stats from backend
   const fetchBackendStats = async () => {
     try {
-      const res = await fetch("http://localhost:3030/codeforces", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        "https://codingtracker-capstone-8.onrender.com/codeforces",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) throw new Error("Failed to fetch user stats.");
       const data = await res.json();
 
@@ -34,10 +39,11 @@ export default function Codeforces() {
           (data.hardSolved || 0),
       });
     } catch (err) {
-      console.error(err);
+      console.error("❌ Error fetching stats:", err.message);
     }
   };
 
+  // ✅ Save updated stats
   const handleSubmit = async () => {
     if (!username.trim()) return alert("Please enter your username.");
     setLoading(true);
@@ -47,18 +53,20 @@ export default function Codeforces() {
         easySolved: stats.easySolved,
         mediumSolved: stats.mediumSolved,
         hardSolved: stats.hardSolved,
-        totalSolved:
-          stats.easySolved + stats.mediumSolved + stats.hardSolved,
+        totalSolved: stats.easySolved + stats.mediumSolved + stats.hardSolved,
       };
 
-      const saveRes = await fetch("http://localhost:3030/codeforces", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updatedStats),
-      });
+      const saveRes = await fetch(
+        "https://codingtracker-capstone-8.onrender.com/codeforces",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(updatedStats),
+        }
+      );
 
       if (!saveRes.ok) {
         alert("❌ Failed to save stats.");
@@ -68,8 +76,9 @@ export default function Codeforces() {
       }
     } catch (err) {
       console.error("Error saving stats:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleLogout = () => {
@@ -89,7 +98,7 @@ export default function Codeforces() {
     setStats(updated);
   };
 
-  // Continuous arcs (Easy → Medium → Hard)
+  // ✅ Progress circle math
   const radius = 100;
   const circumference = 2 * Math.PI * radius;
   const total = stats.totalSolved || 1;

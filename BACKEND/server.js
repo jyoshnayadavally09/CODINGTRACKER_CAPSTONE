@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const app = express();
@@ -11,11 +12,7 @@ app.use(express.json());
 
 // ✅ MongoDB Connect
 mongoose
-  .connect(
-    process.env.MONGO_URI ||
-      "mongodb+srv://yadavallyjyoshna200609_db_user:QPHYIgwRurWGjMOh@cluster0.1cb9jbq.mongodb.net/codingtracker_msd?retryWrites=true&w=majority",
-    { useNewUrlParser: true, useUnifiedTopology: true }
-  )
+  .connect(process.env.MONGO_URI || "mongodb+srv://yadavallyjyoshna200609_db_user:QPHYIgwRurWGjMOh@cluster0.1cb9jbq.mongodb.net/codingtracker_msd?retryWrites=true&w=majority")
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
@@ -43,7 +40,7 @@ function createPlatformModel(platform) {
   return mongoose.models[platform] || mongoose.model(platform, schema);
 }
 
-// ✅ Default Platform Models
+// Default platform models
 const Leetcode = createPlatformModel("Leetcode");
 const Codeforces = createPlatformModel("Codeforces");
 const Hackerrank = createPlatformModel("Hackerrank");
@@ -69,7 +66,8 @@ app.post("/register", async (req, res) => {
     const exists = await User.findOne({ $or: [{ username }, { email }] });
     if (exists) return res.status(400).json({ message: "User already exists" });
 
-    const user = await User.create({ username, email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ username, email, password: hashedPassword });
     res.status(201).json({ message: "Registered successfully", user });
   } catch (err) {
     console.error(err);
@@ -77,22 +75,19 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// ✅ Login (No bcrypt)
+// ✅ Login
 app.post("/login", async (req, res) => {
   try {
     const { identifier, password } = req.body;
     const user = await User.findOne({ $or: [{ username: identifier }, { email: identifier }] });
-
     if (!user) return res.status(401).json({ message: "User not found" });
-    if (user.password !== password)
-      return res.status(401).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      { id: user._id, username: user.username },
-      process.env.JWT_SECRET || "sectionA",
-      { expiresIn: "2h" }
-    );
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
 
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET || "sectionA", {
+      expiresIn: "2h",
+    });
     res.json({ token, username: user.username });
   } catch (err) {
     console.error(err);
@@ -151,13 +146,13 @@ function platformRoutes(path, Model, name) {
   });
 }
 
-// ✅ Apply Platform Routes
+// ✅ Apply platform routes
 platformRoutes("/leetcode", Leetcode, "Leetcode");
 platformRoutes("/codeforces", Codeforces, "Codeforces");
 platformRoutes("/hackerrank", Hackerrank, "Hackerrank");
 platformRoutes("/codechef", Codechef, "Codechef");
 
-// ✅ Custom Platforms Routes
+// ✅ Custom Platforms (now with solved counts)
 app.get("/custom-platforms", verifyToken, async (req, res) => {
   try {
     const list = await CustomPlatform.find({ userId: req.user.id });
@@ -170,14 +165,25 @@ app.get("/custom-platforms", verifyToken, async (req, res) => {
 
 app.post("/custom-platforms", verifyToken, async (req, res) => {
   try {
-    const { platform, username, imageUrl = "", easySolved = 0, mediumSolved = 0, hardSolved = 0 } = req.body;
+    const {
+      platform,
+      username,
+      imageUrl = "",
+      easySolved = 0,
+      mediumSolved = 0,
+      hardSolved = 0,
+    } = req.body;
 
     if (!platform || !username)
       return res.status(400).json({ message: "Platform and username required" });
 
-    const totalSolved = Number(easySolved) + Number(mediumSolved) + Number(hardSolved);
+    const totalSolved =
+      Number(easySolved) + Number(mediumSolved) + Number(hardSolved);
 
-    const existing = await CustomPlatform.findOne({ userId: req.user.id, platform });
+    const existing = await CustomPlatform.findOne({
+      userId: req.user.id,
+      platform,
+    });
 
     if (existing) {
       existing.username = username;

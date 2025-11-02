@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "./Codeforces.css"; // ✅ Reuse Codeforces CSS
+import api from "./api"; // ✅ shared axios config
+import "./Codeforces.css";
 
 export default function CodeChef() {
   const navigate = useNavigate();
@@ -16,14 +16,14 @@ export default function CodeChef() {
   });
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch data
+  // ✅ Fetch stats from backend
   useEffect(() => {
     if (!token) return navigate("/login");
 
     const fetchStats = async () => {
       try {
-        const res = await axios.get("http://localhost:3030/codechef", {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await api.get("/codechef", {
+          headers: { Authorization: `Bearer ${token}` }, // ✅ fixed
         });
         const data = res.data;
         setUsername(data.username || "");
@@ -44,21 +44,21 @@ export default function CodeChef() {
     fetchStats();
   }, [navigate, token]);
 
-  // ✅ Save data
+  // ✅ Save stats to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim()) return alert("Please enter username");
     setLoading(true);
     try {
-      await axios.post(
-        "http://localhost:3030/codechef",
+      await api.post(
+        "/codechef",
         {
           username,
           easySolved: stats.easySolved,
           mediumSolved: stats.mediumSolved,
           hardSolved: stats.hardSolved,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } } // ✅ fixed
       );
       alert("✅ Stats saved successfully!");
     } catch (err) {
@@ -69,6 +69,7 @@ export default function CodeChef() {
     }
   };
 
+  // ✅ Handle stat input change
   const handleStatChange = (field, value) => {
     const updated = { ...stats, [field]: Number(value) || 0 };
     updated.totalSolved =
@@ -76,6 +77,7 @@ export default function CodeChef() {
     setStats(updated);
   };
 
+  // ✅ Circle math
   const total = stats.totalSolved || 1;
   const radius = 100;
   const circumference = 2 * Math.PI * radius;
@@ -103,7 +105,7 @@ export default function CodeChef() {
         </div>
       </div>
 
-      {/* Username Section */}
+      {/* Username */}
       <div className="username-section">
         <input
           type="text"
@@ -116,7 +118,7 @@ export default function CodeChef() {
         </button>
       </div>
 
-      {/* Difficulty Labels */}
+      {/* Difficulty labels */}
       <div className="difficulty-labels">
         <div className="label easy">Easy</div>
         <div className="label medium">Medium</div>
@@ -134,7 +136,7 @@ export default function CodeChef() {
               cy="120"
               r="100"
               style={{
-                strokeDasharray: `${easyArc} ${circumference - easyArc}`,
+                strokeDasharray: `${easyArc} ${circumference - easyArc}`, // ✅ fixed
                 strokeDashoffset: 0,
               }}
             />
@@ -154,7 +156,7 @@ export default function CodeChef() {
               cy="120"
               r="100"
               style={{
-                strokeDasharray: `${hardArc} ${circumference - hardArc}`,
+                strokeDasharray: `${hardArc} ${circumference - hardArc}`, // ✅ fixed
                 strokeDashoffset: -(easyArc + mediumArc),
               }}
             />
@@ -167,7 +169,7 @@ export default function CodeChef() {
         </div>
       </div>
 
-      {/* Stat Input Section */}
+      {/* Stat Inputs */}
       <div className="codeforces-stats">
         <p className="enter-title">Enter</p>
 

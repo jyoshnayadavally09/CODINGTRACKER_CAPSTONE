@@ -19,18 +19,21 @@ const AddPlatform = () => {
     }
 
     try {
-      const res = await fetch("http://localhost:3030/custom-platforms", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          platform,
-          username,
-          imageUrl,
-        }),
-      });
+      const res = await fetch(
+        "https://codingtracker-capstone-8.onrender.com/custom-platforms",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            platform,
+            username,
+            imageUrl,
+          }),
+        }
+      );
 
       if (!res.ok) throw new Error("Failed to save platform");
 

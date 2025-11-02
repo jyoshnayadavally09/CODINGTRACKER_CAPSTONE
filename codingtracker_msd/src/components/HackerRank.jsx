@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Codeforces.css"; // ✅ Reuse Codeforces CSS
 
-export default function CodeChef() {
+export default function HackerRank() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -16,15 +16,18 @@ export default function CodeChef() {
   });
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch data
+  // ✅ Fetch user stats from backend
   useEffect(() => {
     if (!token) return navigate("/login");
 
     const fetchStats = async () => {
       try {
-        const res = await axios.get("http://localhost:3030/hackerrank", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await axios.get(
+          "https://codingtracker-capstone-8.onrender.com/hackerrank",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const data = res.data;
         setUsername(data.username || "");
         setStats({
@@ -37,21 +40,21 @@ export default function CodeChef() {
             (data.hardSolved || 0),
         });
       } catch (err) {
-        console.log("Error fetching CodeChef stats", err.message);
+        console.error("Error fetching HackerRank stats:", err.message);
       }
     };
 
     fetchStats();
   }, [navigate, token]);
 
-  // ✅ Save data
+  // ✅ Save stats to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username.trim()) return alert("Please enter username");
     setLoading(true);
     try {
       await axios.post(
-        "http://localhost:3030/hackerrank",
+        "https://codingtracker-capstone-8.onrender.com/hackerrank",
         {
           username,
           easySolved: stats.easySolved,
@@ -69,6 +72,7 @@ export default function CodeChef() {
     }
   };
 
+  // ✅ Update stat values dynamically
   const handleStatChange = (field, value) => {
     const updated = { ...stats, [field]: Number(value) || 0 };
     updated.totalSolved =
@@ -76,6 +80,7 @@ export default function CodeChef() {
     setStats(updated);
   };
 
+  // ✅ Calculate circular progress
   const total = stats.totalSolved || 1;
   const radius = 100;
   const circumference = 2 * Math.PI * radius;
@@ -108,7 +113,7 @@ export default function CodeChef() {
         <input
           type="text"
           value={username}
-          placeholder="Enter CodeChef Username"
+          placeholder="Enter HackerRank Username"
           onChange={(e) => setUsername(e.target.value)}
         />
         <button className="codeforces-button" onClick={handleSubmit}>
@@ -144,7 +149,9 @@ export default function CodeChef() {
               cy="120"
               r="100"
               style={{
-                strokeDasharray: `${mediumArc} ${circumference - mediumArc}`,
+                strokeDasharray: `${mediumArc} ${
+                  circumference - mediumArc
+                }`,
                 strokeDashoffset: -easyArc,
               }}
             />
@@ -167,9 +174,9 @@ export default function CodeChef() {
         </div>
       </div>
 
-      {/* Stat Input Section */}
+      {/* Input Fields */}
       <div className="codeforces-stats">
-        <p className="enter-title">Enter</p>
+        <p className="enter-title">Enter Solved Problems</p>
 
         <div className="stat-card easy">
           <label>Easy</label>
