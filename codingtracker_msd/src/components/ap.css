@@ -1,0 +1,98 @@
+/* === Add Platform Page === */
+.add-platform-wrapper {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #121212, #1f1f1f);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.add-platform-card {
+  background: #181818;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.1);
+  padding: 40px;
+  width: 90%;
+  max-width: 400px;
+  color: #fff;
+  text-align: left;
+}
+
+.add-title {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #00ff7f;
+  letter-spacing: 1px;
+}
+
+.add-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.add-form input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-bottom: 20px;
+  background: #222;
+  color: #fff;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.add-form input:focus {
+  border-color: #00ff7f;
+  background: #252525;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.save-btn,
+.back-btn {
+  width: 48%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.save-btn {
+  background-color: #00ff7f;
+  color: #000;
+  font-weight: 600;
+}
+
+.save-btn:hover {
+  background-color: #00e673;
+}
+
+.back-btn {
+  background-color: #333;
+  color: #fff;
+}
+
+.back-btn:hover {
+  background-color: #444;
+}
+
+.error {
+  color: #ff6b6b;
+  background: rgba(255, 0, 0, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  text-align: center;
+}

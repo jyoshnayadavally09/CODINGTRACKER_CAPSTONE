@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../index.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell } from "@fortawesome/free-solid-svg-icons";
+import { faBell, faSearch, faTrash } from "@fortawesome/free-solid-svg-icons";
 
-// 🌐 Platform logos
+const basePlatforms = ["leetcode", "codeforces", "codechef", "hackerrank"];
+
 const platformLogos = {
   leetcode: "https://upload.wikimedia.org/wikipedia/commons/1/19/LeetCode_logo_black.png",
   codeforces: "https://sta.codeforces.com/s/86931/images/codeforces-logo-with-telegram.png",
-  codechef: "https://s3.amazonaws.com/codechef_shared/sites/all/themes/abessive/logo.png",
+  codechef: "https://s3.amazonaws.com/codechef_shared/misc/fb-image-icon.png",
   hackerrank: "https://upload.wikimedia.org/wikipedia/commons/6/65/HackerRank_logo.png",
 };
 
-// 💬 Motivational quotes
 const quotes = [
   "Code is like humor. When you have to explain it, it’s bad.",
   "First, solve the problem. Then, write the code.",
@@ -21,96 +21,105 @@ const quotes = [
   "Simplicity is the soul of efficiency.",
 ];
 
-// 🧩 Platforms list
-const platforms = ["leetcode", "codeforces", "codechef", "hackerrank"];
-
-const Dashboard = () => {
+export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [sideOpen, setSideOpen] = useState(false);
-  const [user, setUser] = useState({
-    username: "User",
-    email: "user@example.com",
-    profileImage: "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-  });
+  const [user, setUser] = useState({});
   const [platformStats, setPlatformStats] = useState({});
+  const [customPlatforms, setCustomPlatforms] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [dailyStatus, setDailyStatus] = useState({});
+  const token = localStorage.getItem("token");
 
+  const toggleSideNav = () => setSideOpen((p) => !p);
   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-  const toggleSideNav = () => setSideOpen(!sideOpen);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setPlatformStats({});
-    navigate("/login");
-  };
-
-  // 🧠 Load user data from JWT token
-  const loadUserData = () => {
-    const token = localStorage.getItem("token");
+  // ✅ Decode token & load user
+  useEffect(() => {
     if (!token) return navigate("/login");
-
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       setUser({
         username: payload.username || "User",
         email: payload.email || "user@example.com",
-        profileImage:
-          payload.profileImage ||
-          "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+        profileImage: payload.profileImage || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
       });
-    } catch (error) {
-      console.error("Error decoding token:", error);
+    } catch (err) {
+      console.error("❌ Invalid token", err);
+      navigate("/login");
+    }
+  }, [token, navigate]);
+
+  // ✅ Fetch all platform stats
+  const fetchPlatformStats = async () => {
+    try {
+      const stats = {};
+      for (const p of basePlatforms) {
+        const res = await fetch(`http://localhost:3030/${p}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        stats[p] = {
+          username: data.username || "Not set",
+          totalSolved: data.totalSolved || 0,
+        };
+      }
+      setPlatformStats(stats);
+    } catch (err) {
+      console.error("❌ Failed to fetch base stats:", err);
     }
   };
 
-  // ⚙️ Load stats + daily status
+  // ✅ Fetch custom platforms
+  const fetchCustomPlatforms = async () => {
+    try {
+      const res = await fetch("http://localhost:3030/custom-platforms", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      setCustomPlatforms(data);
+    } catch (err) {
+      console.error("❌ Failed to fetch custom platforms:", err);
+    }
+  };
+
   useEffect(() => {
-    loadUserData();
+    fetchPlatformStats();
+    fetchCustomPlatforms();
+  }, []);
 
-    const todayKey = `dailyStatus-${new Date().toDateString()}`;
-    const savedStatus = JSON.parse(localStorage.getItem(todayKey)) || {};
-    setDailyStatus(savedStatus);
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    const fetchStats = async () => {
-      const newStats = {};
-      for (let platform of platforms) {
-        try {
-          const res = await fetch(`http://localhost:3030/${platform}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            newStats[platform] = {
-              username: data.username || "Not set",
-              totalSolved: data.totalSolved != null ? data.totalSolved : 0,
-            };
-          } else {
-            newStats[platform] = { username: "Not set", totalSolved: 0 };
-          }
-        } catch {
-          newStats[platform] = { username: "Not set", totalSolved: 0 };
-        }
+  // ✅ Handle delete
+  const handleDeletePlatform = async (id) => {
+    if (!window.confirm("Are you sure to delete this platform?")) return;
+    try {
+      const res = await fetch(`http://localhost:3030/custom-platforms/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setCustomPlatforms((prev) => prev.filter((p) => p._id !== id));
       }
-      setPlatformStats(newStats);
-    };
+    } catch (err) {
+      console.error("❌ Delete failed:", err);
+    }
+  };
 
-    fetchStats();
-  }, [navigate]);
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
-  const allDone = platforms.every((p) => dailyStatus[p]);
+  const allDone = basePlatforms.every((p) => dailyStatus[p]);
 
   return (
     <>
-      {/* 🧭 Top Navbar */}
+      {/* 🔝 Navbar */}
       <nav className="top-nav">
         <div className="nav-left">
           <div className="hamburger" onClick={toggleSideNav}>
-            <div></div>
-            <div></div>
-            <div></div>
+            <div></div><div></div><div></div>
           </div>
           <div className="logo">
             <img src="14.png" alt="Logo" />
@@ -118,45 +127,29 @@ const Dashboard = () => {
         </div>
 
         <div className="nav-right">
-          <div className="daily-bell-wrapper">
-            <FontAwesomeIcon
-              icon={faBell}
-              className="daily-bell"
-              onClick={() => navigate("/daily-activity")}
-              style={{
-                cursor: "pointer",
-                fontSize: "24px",
-                color: allDone ? "#00ff7f" : "#0ca50cff",
-              }}
-            />
-          </div>
-
-          {/* 👤 User Info */}
-          <div
-            className="user-profile"
-            onClick={() => navigate("/profilechange")}
-            style={{ cursor: "pointer" }}
-          >
+          <FontAwesomeIcon
+            icon={faBell}
+            className="daily-bell"
+            onClick={() => navigate("/daily-activity")}
+            style={{
+              cursor: "pointer",
+              fontSize: "18px",
+              color: allDone ? "#00ff7f" : "#0ca50cff",
+            }}
+          />
+          <div className="user-profile" onClick={() => navigate("/profilechange")}>
             <img
               src={user.profileImage}
-              alt="User Profile"
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "2px solid #00b14f",
-              }}
+              alt="User"
+              className="profile-img"
+              style={{ width: "35px", height: "35px", borderRadius: "50%" }}
             />
             <div className="user-info">
-              <span className="username">{user.username.toUpperCase()}</span>
-              <p className="user-email">{user.email}</p>
+              <span className="username">{user.username?.toUpperCase()}</span>
+              
             </div>
           </div>
-
-          <button className="back-btn" onClick={handleLogout}>
-            Logout
-          </button>
+          <button className="logout-btn small" onClick={handleLogout}>Logout</button>
         </div>
       </nav>
 
@@ -164,63 +157,101 @@ const Dashboard = () => {
       <div className={`side-nav ${sideOpen ? "open" : ""}`}>
         <ul>
           <li onClick={() => navigate("/")}>← Dashboard</li>
-          {platforms.map((p) => (
+          {basePlatforms.map((p) => (
             <li key={p} onClick={() => navigate(`/${p}`)}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </li>
           ))}
+          {customPlatforms.map((p) => (
+            <li key={p._id} onClick={() => navigate(`/custom/${p.platform}`)}>
+              {p.platform}
+            </li>
+          ))}
+          <li onClick={() => navigate("/add-platform")}>➕ Add Platform</li>
           <li onClick={handleLogout}>Logout</li>
         </ul>
       </div>
 
-      {/* 🧱 Main Dashboard Content */}
-      <div className={`dashboard-container ${sideOpen ? "shifted" : ""}`}>
-        <div className="dashboard-left">
-          <h1>{user.username.toUpperCase()}</h1>
-          <p>
-            <i>{randomQuote}</i>
-          </p>
+      {/* 🌟 Dashboard */}
+      <div className={`dashboard-main ${sideOpen ? "shifted" : ""}`}>
+        <h1 className="welcome-text">Hello, {user.username?.toUpperCase()} 👋</h1>
 
-          <div className="platform-grid">
-            {platforms.map((platform) => {
-              const stats =
-                platformStats[platform] || { username: "Not set", totalSolved: 0 };
+        <div className="search-center">
+          <FontAwesomeIcon icon={faSearch} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search platform..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <p className="quote-text"><i>{randomQuote}</i></p>
+
+        <div className="platform-grid">
+          {/* 🟢 Default Platforms */}
+          {basePlatforms
+            .filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase()))
+            .map((platform) => {
+              const stats = platformStats[platform] || { username: "Not set", totalSolved: 0 };
               return (
                 <div
                   key={platform}
                   className="platform-card"
                   onClick={() => navigate(`/${platform}`)}
                 >
-                  <h2>
-                    <img
-                      src={platformLogos[platform]}
-                      alt={platform}
-                      className="platform-logo-small"
-                    />
-                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                  </h2>
+                  <img
+                    src={platformLogos[platform]}
+                    alt={platform}
+                    className={`platform-logo-small logo-${platform.toLowerCase()}`}
+                  />
+                  <h2>{platform.charAt(0).toUpperCase() + platform.slice(1)}</h2>
                   <p>Username: {stats.username}</p>
                   <p>Total Solved: {stats.totalSolved}</p>
                 </div>
               );
             })}
 
-            {/* ➕ Add new platform */}
-            <div
-              className="platform-card add-card"
-              onClick={() => alert("Feature to add new platform coming soon!")}
-            >
-              <h2>➕ Add Platform</h2>
-            </div>
-          </div>
-        </div>
+          {/* 🟣 Custom Platforms */}
+          {customPlatforms
+            .filter((p) =>
+              p.platform.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((p) => (
+              <div
+                key={p._id}
+                className="platform-card custom"
+                onClick={() => navigate(`/custom/${encodeURIComponent(p.platform)}`)}
+              >
+                <img
+                  src={p.imageUrl || "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"}
+                  alt={p.platform}
+                  className="platform-logo-small logo-custom"
+                />
+                <h2>{p.platform}</h2>
+                <p>Username: {p.username}</p>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeletePlatform(p._id);
+                  }}
+                  style={{ color: "red", cursor: "pointer", marginTop: "10px" }}
+                />
+              </div>
+            ))}
 
-        <div className="dashboard-right">
-          <img src="12.png" alt="Coding Illustration" />
+          {/* ➕ Add Card */}
+          <div
+            className="platform-card add-card"
+            onClick={() => navigate("/add-platform")}
+          >
+            <h2>➕ Add Platform</h2>
+            <p>Add a new coding profile</p>
+            <p>Total Platforms: {basePlatforms.length + customPlatforms.length}</p>
+          </div>
         </div>
       </div>
     </>
   );
-};
-
-export default Dashboard;
+}

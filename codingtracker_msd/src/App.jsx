@@ -8,12 +8,14 @@ import Hackerrank from "./components/HackerRank";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import Profile from "./components/Profile";
-import ProfileChange from "./components/ProfileChange"; // ✅ import the new profile page
+import ProfileChange from "./components/ProfileChange";
 import DailyActivity from "./components/HabitTracker";
+import AddPlatform from "./components/AddPlatform";
+import CustomPlatform from "./components/CustomPlatform";
 import { PlatformStatsProvider } from "./components/PlatformStatsContext";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
@@ -26,59 +28,33 @@ function App() {
     setToken(null);
   };
 
+  const ProtectedRoute = ({ element }) =>
+    token ? element : <Navigate to="/login" replace />;
+
   return (
     <PlatformStatsProvider>
       <Router>
         <Routes>
-          {/* Default route */}
-          <Route
-            path="/"
-            element={token ? <Navigate to="/dashboard" /> : <Navigate to="/login" />}
-          />
+          {/* ✅ Default route shows Dashboard */}
+          <Route path="/" element={<Dashboard />} />
 
-          {/* Auth routes */}
+          {/* Auth pages */}
           <Route path="/login" element={<Login setToken={setToken} />} />
           <Route path="/register" element={<Register setToken={setToken} />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/dashboard"
-            element={token ? <Dashboard /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/leetcode"
-            element={token ? <LeetCode /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/codeforces"
-            element={token ? <Codeforces /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/codechef"
-            element={token ? <Codechef /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/hackerrank"
-            element={token ? <Hackerrank /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/profile"
-            element={
-              token ? <Profile token={token} onLogout={handleLogout} /> : <Navigate to="/login" />
-            }
-          />
+          {/* Protected pages (need login) */}
+          <Route path="/leetcode" element={<ProtectedRoute element={<LeetCode />} />} />
+          <Route path="/codeforces" element={<ProtectedRoute element={<Codeforces />} />} />
+          <Route path="/codechef" element={<ProtectedRoute element={<Codechef />} />} />
+          <Route path="/hackerrank" element={<ProtectedRoute element={<Hackerrank />} />} />
+          <Route path="/daily-activity" element={<ProtectedRoute element={<DailyActivity />} />} />
+          <Route path="/add-platform" element={<ProtectedRoute element={<AddPlatform />} />} />
+          <Route path="/custom/:platform" element={<ProtectedRoute element={<CustomPlatform />} />} />
+          <Route path="/profile" element={<ProtectedRoute element={<Profile token={token} onLogout={handleLogout} />} />} />
+          <Route path="/profilechange" element={<ProtectedRoute element={<ProfileChange />} />} />
 
-          {/* ✅ New route for the Profile Change page */}
-          <Route
-            path="/profilechange"
-            element={token ? <ProfileChange /> : <Navigate to="/login" />}
-          />
-
-          {/* Daily Activity Page */}
-          <Route
-            path="/daily-activity"
-            element={token ? <DailyActivity /> : <Navigate to="/login" />}
-          />
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </PlatformStatsProvider>
