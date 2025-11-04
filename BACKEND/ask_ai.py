@@ -20,7 +20,7 @@ CORS(app)
 HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "Content-Type": "application/json",
-    "HTTP-Referer": "http://localhost:3000",  # frontend URL
+    "HTTP-Referer": "https://codingtracker-capstone.onrender.com",  # 🔹 update to your deployed frontend URL
     "X-Title": "CodingTracker AI",
 }
 
@@ -91,7 +91,7 @@ def ask_ai():
             "roadmap": roadmap,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
-        ai_history.append(entry)  # ✅ Save to memory
+        ai_history.append(entry)
         return jsonify(entry)
 
     elif roadmap and roadmap.startswith("API Error"):
@@ -119,6 +119,7 @@ def home():
     return jsonify({"message": "✅ AI Roadmap Flask Server is running!"})
 
 
-# === Run Server ===
+# === Run Server (Render-compatible) ===
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))   # Render provides PORT env variable
+    app.run(host="0.0.0.0", port=port, debug=False)
