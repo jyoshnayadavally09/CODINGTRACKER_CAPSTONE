@@ -9,13 +9,16 @@ export default function AskAI() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
 
+  // ✅ Render AI backend URL
+  const API_BASE = "https://ai-m-0js9.onrender.com";
+
   useEffect(() => {
     loadHistory();
   }, []);
 
   const loadHistory = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:5000/ai_history");
+      const res = await fetch(`${API_BASE}/ai_history`);
       const data = await res.json();
       setHistory(data.reverse());
     } catch (err) {
@@ -29,11 +32,12 @@ export default function AskAI() {
     setResponse("");
 
     try {
-      const res = await fetch("http://127.0.0.1:5000/ask_ai", {
+      const res = await fetch(`${API_BASE}/ask_ai`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: input }),
       });
+
       const data = await res.json();
 
       if (res.ok && data.roadmap) {
