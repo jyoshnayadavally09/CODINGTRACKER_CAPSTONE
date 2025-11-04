@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./ai.css";
@@ -8,9 +9,9 @@ export default function AskAI() {
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const navigate = useNavigate();
 
-  // ✅ Render AI backend URL
-  const API_BASE = "https://ai-m-0js9.onrender.com";
+  const API_BASE = "http://127.0.0.1:5000"; // ✅ Local backend
 
   useEffect(() => {
     loadHistory();
@@ -39,7 +40,6 @@ export default function AskAI() {
       });
 
       const data = await res.json();
-
       if (res.ok && data.roadmap) {
         setResponse(data.roadmap);
         loadHistory();
@@ -61,9 +61,13 @@ export default function AskAI() {
 
   return (
     <div className="ai-page">
-      {/* === LEFT CHAT CARD === */}
       <div className="ai-chat">
         <div className="ai-card">
+          {/* === Back Button === */}
+          <button className="back-btn" onClick={() => navigate("/dashboard")}>
+            ← Back
+          </button>
+
           <h1 className="title">Ask AI</h1>
           <div className="ai-input-group">
             <input
@@ -94,7 +98,6 @@ export default function AskAI() {
         </div>
       </div>
 
-      {/* === RIGHT HISTORY === */}
       <div className="ai-history">
         <h3>AI History</h3>
         <div className="history-list">
