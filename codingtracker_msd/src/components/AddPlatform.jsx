@@ -1,99 +1,74 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import "./ap.css";
+import "./ai.css";
 
-const AddPlatform = () => {
-  const [platform, setPlatform] = useState("");
-  const [username, setUsername] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+export default function AskAI() {
+  const [input, setInput] = useState("");
+  const [response, setResponse] = useState("");
+  const [drawioFile, setDrawioFile] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setError("Login required");
-      return navigate("/login");
-    }
+  const handleAsk = async () => {
+    if (!input.trim()) return;
+    setLoading(true);
+    setResponse("");
+    setDrawioFile("");
 
     try {
-      const res = await fetch(
-        "https://codingtracker-capstone-8.onrender.com/custom-platforms",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            platform,
-            username,
-            imageUrl,
-          }),
-        }
-      );
+      const res = await fetch("http://127.0.0.1:5000/ask_ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: input }),
+      });
 
-      if (!res.ok) throw new Error("Failed to save platform");
+      const data = await res.json().catch(() => ({}));
 
-      await res.json();
-      navigate("/");
-    } catch (err) {
-      setError("Error saving platform");
-      console.error(err);
+      if (res.ok && data.response) {
+        setResponse(data.response);
+        if (data.file) setDrawioFile(data.file); // ✅ backend returns filename
+      } else {
+        setResponse("⚠️ AI server error: " + (data.error || "Unknown issue."));
+      }
+    } catch (error) {
+      console.error("Connection error:", error);
+      setResponse("⚠️ Cannot connect to AI server. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="add-platform-wrapper">
-      <div className="add-platform-card">
-        <h2 className="add-title">➕ Add Custom Platform</h2>
-        {error && <p className="error">{error}</p>}
+    <div className="ask-ai-container">
+      <h2>🤖 Ask AI for Coding Help</h2>
 
-        <form onSubmit={handleSubmit} className="add-form">
-          <label>Platform Name</label>
-          <input
-            type="text"
-            value={platform}
-            onChange={(e) => setPlatform(e.target.value)}
-            placeholder="e.g. GFG"
-            required
-          />
+      <textarea
+        className="ask-ai-input"
+        placeholder="Ask me about DSA, Arrays, Web Dev..."
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+      />
 
-          <label>Username</label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="e.g. jyoshna123"
-            required
-          />
+      <button className="ask-ai-btn" onClick={handleAsk} disabled={loading}>
+        {loading ? "Thinking..." : "Ask AI"}
+      </button>
 
-          <label>Image URL</label>
-          <input
-            type="text"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://example.com/logo.png"
-          />
-
-          <div className="button-group">
-            <button
-              type="button"
-              className="back-btn"
-              onClick={() => navigate("/")}
-            >
-              ← Back
-            </button>
-            <button type="submit" className="save-btn">
-              Save
-            </button>
-          </div>
-        </form>
+      <div className="ask-ai-response">
+        {loading ? "⏳ Generating your roadmap..." : response && (
+          <>
+            <h3>📘 AI Roadmap</h3>
+            <pre>{response}</pre>
+            {drawioFile && (
+              <a
+                href={`http://127.0.0.1:5000/files/${drawioFile}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="view-drawio-btn"
+              >
+                🗺️ View Visual Roadmap
+              </a>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
-};
-
-export default AddPlatform;
+}

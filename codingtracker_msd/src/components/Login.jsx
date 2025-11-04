@@ -39,9 +39,21 @@ try {
 
 };
 
-return ( <div className="auth-container"> <div className="auth-box"> <img src="logo.png" alt="Coding Tracker" className="logo" /> <h2>Welcome Back</h2>
+return (
+  <div className="auth-container">
+    <div className="auth-box">
+      <img
+  src="14.png"
+  alt="Code Hustle"
+  style={{
+    width: "200px",          // 🔹 increase the size
+    height: "auto",          // keeps aspect ratio
+    display: "block",
+    margin: "0 auto 20px",   // centers and adds spacing
+  }}
 
-
+      />
+      <h2>Welcome Back</h2>
     <form onSubmit={handleLogin}>
       <input
         type="text"

@@ -1,74 +1,49 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "./DA.css";
-import { FaCalendarAlt } from "react-icons/fa";
+import { FaCalendarAlt, FaRedo, FaSave, FaArrowLeft } from "react-icons/fa";
 
-const PlatformTracker = () => {
-  const [platforms, setPlatforms] = useState([
-    {
-      name: "LeetCode",
-      tokens: 0,
-      progress: 0,
-      days: [false, false, false, false, false, false, false],
-      checkIns: [], // store actual calendar dates
-      showCalendar: false,
-    },
-    {
-      name: "GeeksforGeeks",
-      tokens: 0,
-      progress: 0,
-      days: [false, false, false, false, false, false, false],
-      checkIns: [],
-      showCalendar: false,
-    },
-    {
-      name: "Codeforces",
-      tokens: 0,
-      progress: 0,
-      days: [false, false, false, false, false, false, false],
-      checkIns: [],
-      showCalendar: false,
-    },
-    {
-      name: "CodeChef",
-      tokens: 0,
-      progress: 0,
-      days: [false, false, false, false, false, false, false],
-      checkIns: [],
-      showCalendar: false,
-    },
-    {
-      name: "HackerRank",
-      tokens: 0,
-      progress: 0,
-      days: [false, false, false, false, false, false, false],
-      checkIns: [],
-      showCalendar: false,
-    },
-  ]);
+const initialPlatforms = [
+  "LeetCode",
+  "GeeksforGeeks",
+  "Codeforces",
+  "CodeChef",
+  "HackerRank",
+].map((name) => ({
+  name,
+  tokens: 0,
+  progress: 0,
+  days: [false, false, false, false, false, false, false],
+  checkIns: [],
+  showCalendar: false,
+}));
+
+export default function PlatformTracker() {
+  const [platforms, setPlatforms] = useState(() => {
+    const saved = localStorage.getItem("platformProgress");
+    return saved ? JSON.parse(saved) : initialPlatforms;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("platformProgress", JSON.stringify(platforms));
+  }, [platforms]);
 
   const toggleDay = (index, dayIndex) => {
     const updated = [...platforms];
-    const platform = updated[index];
-    const wasChecked = platform.days[dayIndex];
-    platform.days[dayIndex] = !wasChecked;
+    const p = updated[index];
+    const wasChecked = p.days[dayIndex];
+    p.days[dayIndex] = !wasChecked;
+    p.tokens += wasChecked ? -5 : 5;
+    const checkedDays = p.days.filter(Boolean).length;
+    p.progress = Math.round((checkedDays / 7) * 100);
 
-    // Token logic
-    platform.tokens += wasChecked ? -5 : 5;
-    const checkedDays = platform.days.filter(Boolean).length;
-    platform.progress = Math.round((checkedDays / 7) * 100);
-
-    // Calendar marking (add today's date)
     const today = new Date().toDateString();
     if (!wasChecked) {
-      if (!platform.checkIns.includes(today)) {
-        platform.checkIns.push(today);
-      }
+      if (!p.checkIns.includes(today)) p.checkIns.push(today);
     } else {
-      platform.checkIns = platform.checkIns.filter((d) => d !== today);
+      p.checkIns = p.checkIns.filter((d) => d !== today);
     }
-
     setPlatforms(updated);
   };
 
@@ -80,30 +55,45 @@ const PlatformTracker = () => {
 
   const handleDateClick = (index, date) => {
     const updated = [...platforms];
-    const platform = updated[index];
+    const p = updated[index];
     const dateStr = date.toDateString();
 
-    if (platform.checkIns.includes(dateStr)) {
-      platform.checkIns = platform.checkIns.filter((d) => d !== dateStr);
-      platform.tokens -= 5;
+    if (p.checkIns.includes(dateStr)) {
+      p.checkIns = p.checkIns.filter((d) => d !== dateStr);
+      p.tokens -= 5;
     } else {
-      platform.checkIns.push(dateStr);
-      platform.tokens += 5;
+      p.checkIns.push(dateStr);
+      p.tokens += 5;
     }
 
     setPlatforms(updated);
   };
 
-  const tileContent = (platform, date) => {
+  const tileContent = (p, date) => {
     const dateStr = date.toDateString();
-    if (platform.checkIns.includes(dateStr)) {
-      return <div className="dot"></div>;
+    return p.checkIns.includes(dateStr) ? (
+      <div className="dot"></div>
+    ) : null;
+  };
+
+  const resetProgress = () => {
+    if (window.confirm("Reset all progress?")) {
+      setPlatforms(initialPlatforms);
+      localStorage.removeItem("platformProgress");
     }
-    return null;
+  };
+
+  const saveProgress = () => {
+    localStorage.setItem("platformProgress", JSON.stringify(platforms));
+    alert("Progress saved ✅");
   };
 
   return (
     <div className="platform-page">
+      <button className="back-top-btn" onClick={() => window.history.back()}>
+        <FaArrowLeft /> Back
+      </button>
+
       <div className="platform-header">
         <img
           src="https://cdn-icons-png.flaticon.com/512/9846/9846136.png"
@@ -113,7 +103,16 @@ const PlatformTracker = () => {
         <h1>Platform Tracker</h1>
       </div>
 
-      <h2 className="sub-title">Track Your Coding Progress by Tokens</h2>
+      <h2 className="sub-title">Track Your Weekly Coding Progress 💻</h2>
+
+      <div className="action-buttons">
+        <button onClick={saveProgress} className="save-btn">
+          <FaSave /> Save
+        </button>
+        <button onClick={resetProgress} className="reset-btn">
+          <FaRedo /> Reset
+        </button>
+      </div>
 
       <table className="platform-table">
         <thead>
@@ -141,7 +140,10 @@ const PlatformTracker = () => {
                   <div className="progress-bar">
                     <div
                       className="progress-fill"
-                      style={{ width: `${p.progress}%` }}
+                      style={{
+                        width: `${p.progress}%`,
+                        transition: "width 0.4s ease-in-out",
+                      }}
                     ></div>
                   </div>
                   <span className="progress-text">{p.progress}%</span>
@@ -172,12 +174,6 @@ const PlatformTracker = () => {
           ))}
         </tbody>
       </table>
-
-      <button className="back-btn" onClick={() => window.history.back()}>
-        ⬅ Back
-      </button>
     </div>
   );
-};
-
-export default PlatformTracker;
+}

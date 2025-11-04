@@ -186,6 +186,7 @@ body, html {
   max-width: 600px;
   margin: 8px auto 30px;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  gap: 10px;
 }
 
 .search-center input {
@@ -201,6 +202,23 @@ body, html {
 .search-icon {
   color: #aaa;
   font-size: 17px;
+}
+
+/* === Ask AI Button === */
+.ask-ai-btn {
+  padding: 8px 14px;
+  background-color: #00c853;
+  color: #fff;
+  border: none;
+  border-radius: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s ease;
+  font-size: 14px;
+}
+.ask-ai-btn:hover {
+  background-color: #00e676;
+  transform: scale(1.05);
 }
 
 /* === Quote === */
@@ -234,7 +252,7 @@ body, html {
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
 }
 
-/* === Platform Logos (Updated) === */
+/* === Platform Logos === */
 .platform-logo-small {
   width: 80px;
   height: 80px;
@@ -260,6 +278,12 @@ body, html {
 @media (max-width: 768px) {
   .search-center {
     width: 95%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ask-ai-btn {
+    width: 100%;
+    border-radius: 10px;
   }
   .platform-grid {
     width: 100%;

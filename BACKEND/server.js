@@ -226,6 +226,55 @@ app.delete("/custom-platforms/:id", verifyToken, async (req, res) => {
   }
 });
 
+app.post("/ask_ai", verifyToken, async (req, res) => {
+  try {
+    const { topic } = req.body;
+    if (!topic) return res.status(400).json({ message: "Topic required" });
+
+    const prompt = `Create a detailed 3-month learning roadmap for ${topic}. Include weekly goals and key resources.`;
+
+    const aiRes = await axios.post(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        model: "openai/gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const answer = aiRes.data.choices[0].message.content;
+
+    // ✅ Save to history
+    await AIHistory.create({
+      userId: req.user.id,
+      question: topic,
+      answer,
+    });
+
+    res.json({ topic, roadmap: answer });
+  } catch (err) {
+    console.error("❌ AI error:", err.response?.data || err.message);
+    res.status(500).json({ message: "AI generation failed" });
+  }
+});
+
+// ✅ Fetch AI history
+app.get("/ai_history", verifyToken, async (req, res) => {
+  try {
+    const history = await AIHistory.find({ userId: req.user.id }).sort({ createdAt: -1 });
+    res.json(history);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Fetch failed" });
+  }
+});
+
+
 // ✅ Server Start
 const PORT = process.env.PORT || 3030;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

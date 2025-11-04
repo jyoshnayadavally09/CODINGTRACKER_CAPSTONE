@@ -13,6 +13,8 @@ import DailyActivity from "./components/HabitTracker";
 import AddPlatform from "./components/AddPlatform";
 import CustomPlatform from "./components/CustomPlatform";
 import { PlatformStatsProvider } from "./components/PlatformStatsContext";
+import AskAI from "./components/AskAI";
+
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -55,6 +57,7 @@ function App() {
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/ask-ai" element={<AskAI />} />
         </Routes>
       </Router>
     </PlatformStatsProvider>

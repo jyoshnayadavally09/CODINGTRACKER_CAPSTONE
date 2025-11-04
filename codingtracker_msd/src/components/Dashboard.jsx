@@ -8,10 +8,13 @@ import api from "./api";
 const basePlatforms = ["leetcode", "codeforces", "codechef", "hackerrank"];
 
 const platformLogos = {
-  leetcode: "https://upload.wikimedia.org/wikipedia/commons/1/19/LeetCode_logo_black.png",
-  codeforces: "https://sta.codeforces.com/s/86931/images/codeforces-logo-with-telegram.png",
+  leetcode:
+    "https://upload.wikimedia.org/wikipedia/commons/1/19/LeetCode_logo_black.png",
+  codeforces:
+    "https://sta.codeforces.com/s/86931/images/codeforces-logo-with-telegram.png",
   codechef: "https://s3.amazonaws.com/codechef_shared/misc/fb-image-icon.png",
-  hackerrank: "https://upload.wikimedia.org/wikipedia/commons/6/65/HackerRank_logo.png",
+  hackerrank:
+    "https://upload.wikimedia.org/wikipedia/commons/6/65/HackerRank_logo.png",
 };
 
 const quotes = [
@@ -37,7 +40,7 @@ export default function Dashboard() {
   const toggleSideNav = () => setSideOpen((p) => !p);
   const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
 
-  // ✅ Decode token & load user
+  // ✅ Decode token
   useEffect(() => {
     if (!token) return navigate("/login");
     try {
@@ -45,7 +48,9 @@ export default function Dashboard() {
       setUser({
         username: payload.username || "User",
         email: payload.email || "user@example.com",
-        profileImage: payload.profileImage || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+        profileImage:
+          payload.profileImage ||
+          "https://cdn-icons-png.flaticon.com/512/847/847969.png",
       });
     } catch (err) {
       console.error("❌ Invalid token", err);
@@ -53,7 +58,7 @@ export default function Dashboard() {
     }
   }, [token, navigate]);
 
-  // ✅ Fetch all platform stats (using axios)
+  // ✅ Fetch base platform stats
   const fetchPlatformStats = async () => {
     try {
       const stats = {};
@@ -103,6 +108,7 @@ export default function Dashboard() {
     }
   };
 
+  // ✅ Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/login");
@@ -116,7 +122,9 @@ export default function Dashboard() {
       <nav className="top-nav">
         <div className="nav-left">
           <div className="hamburger" onClick={toggleSideNav}>
-            <div></div><div></div><div></div>
+            <div></div>
+            <div></div>
+            <div></div>
           </div>
           <div className="logo">
             <img src="14.png" alt="Logo" />
@@ -134,7 +142,10 @@ export default function Dashboard() {
               color: allDone ? "#00ff7f" : "#0ca50cff",
             }}
           />
-          <div className="user-profile" onClick={() => navigate("/profilechange")}>
+          <div
+            className="user-profile"
+            onClick={() => navigate("/profilechange")}
+          >
             <img
               src={user.profileImage}
               alt="User"
@@ -145,7 +156,9 @@ export default function Dashboard() {
               <span className="username">{user.username?.toUpperCase()}</span>
             </div>
           </div>
-          <button className="logout-btn small" onClick={handleLogout}>Logout</button>
+          <button className="logout-btn small" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </nav>
 
@@ -170,8 +183,11 @@ export default function Dashboard() {
 
       {/* 🌟 Dashboard */}
       <div className={`dashboard-main ${sideOpen ? "shifted" : ""}`}>
-        <h1 className="welcome-text">Hello, {user.username?.toUpperCase()} 👋</h1>
+        <h1 className="welcome-text">
+          Hello, {user.username?.toUpperCase()} 👋
+        </h1>
 
+        {/* 🔍 Search + Ask AI */}
         <div className="search-center">
           <FontAwesomeIcon icon={faSearch} className="search-icon" />
           <input
@@ -180,16 +196,22 @@ export default function Dashboard() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          <button className="ask-ai-btn" onClick={() => navigate("/ask-ai")}>
+            🤖 Ask AI
+          </button>
         </div>
 
-        <p className="quote-text"><i>{randomQuote}</i></p>
+        <p className="quote-text">
+          <i>{randomQuote}</i>
+        </p>
 
         <div className="platform-grid">
           {/* 🟢 Default Platforms */}
           {basePlatforms
             .filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase()))
             .map((platform) => {
-              const stats = platformStats[platform] || { username: "Not set", totalSolved: 0 };
+              const stats =
+                platformStats[platform] || { username: "Not set", totalSolved: 0 };
               return (
                 <div
                   key={platform}
@@ -201,7 +223,9 @@ export default function Dashboard() {
                     alt={platform}
                     className={`platform-logo-small logo-${platform.toLowerCase()}`}
                   />
-                  <h2>{platform.charAt(0).toUpperCase() + platform.slice(1)}</h2>
+                  <h2>
+                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  </h2>
                   <p>Username: {stats.username}</p>
                   <p>Total Solved: {stats.totalSolved}</p>
                 </div>
@@ -217,10 +241,15 @@ export default function Dashboard() {
               <div
                 key={p._id}
                 className="platform-card custom"
-                onClick={() => navigate(`/custom/${encodeURIComponent(p.platform)}`)}
+                onClick={() =>
+                  navigate(`/custom/${encodeURIComponent(p.platform)}`)
+                }
               >
                 <img
-                  src={p.imageUrl || "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"}
+                  src={
+                    p.imageUrl ||
+                    "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"
+                  }
                   alt={p.platform}
                   className="platform-logo-small logo-custom"
                 />
@@ -244,7 +273,9 @@ export default function Dashboard() {
           >
             <h2>➕ Add Platform</h2>
             <p>Add a new coding profile</p>
-            <p>Total Platforms: {basePlatforms.length + customPlatforms.length}</p>
+            <p>
+              Total Platforms: {basePlatforms.length + customPlatforms.length}
+            </p>
           </div>
         </div>
       </div>
